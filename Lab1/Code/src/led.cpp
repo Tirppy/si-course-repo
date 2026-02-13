@@ -1,7 +1,9 @@
+/* led.cpp -- LED module implementation */
+
 #include "led.h"
 
-static uint8_t ledPin = 0;
-static uint8_t ledState = LOW;
+static uint8_t ledPin   = 0;   /* GPIO pin number */
+static uint8_t ledState = LOW; /* Cached state */
 
 void ledInit(uint8_t pin) {
     ledPin = pin;

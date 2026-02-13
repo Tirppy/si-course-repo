@@ -1,10 +1,12 @@
+/* serialCommand.cpp -- STDIO redirect + command processing */
+
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include "serialCommand.h"
 #include "led.h"
 
-/* -------- STDIO redirect over UART -------- */
+/* --- STDIO redirect callbacks --- */
 
 static int uartPutChar(char c, FILE *stream) {
     (void)stream;
@@ -17,20 +19,18 @@ static int uartPutChar(char c, FILE *stream) {
 
 static int uartGetChar(FILE *stream) {
     (void)stream;
-    while (!Serial.available()) {
-        // wait for data
-    }
+    while (!Serial.available()) {} /* wait for data */
     return Serial.read();
 }
 
 static FILE uartStream;
 
-/* -------- Public functions -------- */
+/* --- Public functions --- */
 
 void serialCommandInit(unsigned long baudRate) {
     Serial.begin(baudRate);
 
-    /* Redirect stdin/stdout to UART via STDIO */
+    /* Redirect stdin/stdout to UART */
     fdev_setup_stream(&uartStream, uartPutChar, uartGetChar, _FDEV_SETUP_RW);
     stdout = &uartStream;
     stdin  = &uartStream;
@@ -39,40 +39,39 @@ void serialCommandInit(unsigned long baudRate) {
     printf("Available commands:\n");
     printf("  led on  - Turn LED on\n");
     printf("  led off - Turn LED off\n");
-    printf("> ");
 }
 
-int serialCommandRead(char *buffer, uint8_t maxLength) {
-    static uint8_t index = 0;
+void serialCommandRead(char *buffer, uint8_t maxLength) {
+    uint8_t i = 0;
+    int c;
 
-    while (Serial.available()) {
-        char c = (char)Serial.read();
+    printf("> ");
+
+    while (i < maxLength - 1) {
+        c = getchar();              /* blocking read */
 
         /* Handle backspace */
         if (c == '\b' || c == 127) {
-            if (index > 0) {
-                index--;
-                printf("\b \b");
+            if (i > 0) {
+                i--;
+                printf("\b \b");    /* erase char on terminal */
             }
             continue;
         }
 
         /* End of line */
         if (c == '\r' || c == '\n') {
-            buffer[index] = '\0';
-            uint8_t len = index;
-            index = 0;
-            printf("\n");
-            return len;
+            putchar('\n');          /* echo newline */
+            break;
         }
 
-        /* Store printable character */
-        if (index < maxLength - 1 && isprint((unsigned char)c)) {
-            buffer[index++] = c;
-            printf("%c", c);  /* echo */
+        /* Store and echo printable character */
+        if (isprint(c)) {
+            buffer[i++] = (char)c;
+            putchar(c);             /* echo character */
         }
     }
-    return -1;  /* command not yet complete */
+    buffer[i] = '\0';
 }
 
 static void toLowerStr(char *str) {
@@ -82,20 +81,30 @@ static void toLowerStr(char *str) {
 }
 
 void serialCommandProcess(const char *command) {
-    char cmd[32];
-    strncpy(cmd, command, sizeof(cmd) - 1);
-    cmd[sizeof(cmd) - 1] = '\0';
-    toLowerStr(cmd);
+    char device[16] = {0};
+    char action[16] = {0};
 
-    if (strcmp(cmd, "led on") == 0) {
-        ledOn();
-        printf("LED is now ON.\n");
-    } else if (strcmp(cmd, "led off") == 0) {
-        ledOff();
-        printf("LED is now OFF.\n");
-    } else if (strlen(cmd) > 0) {
+    /* Parse command with sscanf */
+    int fields = sscanf(command, "%15s %15s", device, action);
+
+    toLowerStr(device);
+    if (fields >= 2) {
+        toLowerStr(action);
+    }
+
+    if (fields == 2 && strcmp(device, "led") == 0) {
+        if (strcmp(action, "on") == 0) {
+            ledOn();
+            printf("LED is now ON.\n");
+        } else if (strcmp(action, "off") == 0) {
+            ledOff();
+            printf("LED is now OFF.\n");
+        } else {
+            printf("Unknown action: \"%s\"\n", action);
+            printf("Use: led on / led off\n");
+        }
+    } else if (strlen(command) > 0) {
         printf("Unknown command: \"%s\"\n", command);
         printf("Use: led on / led off\n");
     }
-    printf("> ");
 }

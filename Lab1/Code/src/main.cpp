@@ -1,11 +1,4 @@
-/*
- * Lab 1.1 - STDIO Serial Interface: LED Control
- * MCU: Arduino Uno (ATmega328P)
- * 
- * Commands (via serial terminal at 9600 baud):
- *   led on  - Turn the LED on
- *   led off - Turn the LED off
- */
+/* main.cpp -- Lab 1.1: STDIO Serial Interface, LED Control (ATmega328P) */
 
 #include <Arduino.h>
 #include "led.h"
@@ -23,8 +16,6 @@ void setup() {
 }
 
 void loop() {
-    int result = serialCommandRead(cmdBuffer, CMD_BUF_SIZE);
-    if (result >= 0) {
-        serialCommandProcess(cmdBuffer);
-    }
+    serialCommandRead(cmdBuffer, CMD_BUF_SIZE);   /* blocks until line is complete */
+    serialCommandProcess(cmdBuffer);
 }
