@@ -4,8 +4,6 @@
 #include "serialCommand.h"
 #include "led.h"
 
-/* -------- STDIO redirect over UART -------- */
-
 static int uartPutChar(char c, FILE *stream) {
     (void)stream;
     if (c == '\n') {
@@ -18,19 +16,23 @@ static int uartPutChar(char c, FILE *stream) {
 static int uartGetChar(FILE *stream) {
     (void)stream;
     while (!Serial.available()) {
-        // wait for data
+        
     }
-    return Serial.read();
+    int c = Serial.read();
+    if (c == '\r' || c == '\n') {
+        Serial.write('\r');
+        Serial.write('\n');
+    } else {
+        Serial.write((uint8_t)c);
+    }
+    return c;
 }
 
 static FILE uartStream;
 
-/* -------- Public functions -------- */
-
 void serialCommandInit(unsigned long baudRate) {
     Serial.begin(baudRate);
 
-    /* Redirect stdin/stdout to UART via STDIO */
     fdev_setup_stream(&uartStream, uartPutChar, uartGetChar, _FDEV_SETUP_RW);
     stdout = &uartStream;
     stdin  = &uartStream;
@@ -39,40 +41,15 @@ void serialCommandInit(unsigned long baudRate) {
     printf("Available commands:\n");
     printf("  led on  - Turn LED on\n");
     printf("  led off - Turn LED off\n");
-    printf("> ");
 }
 
 int serialCommandRead(char *buffer, uint8_t maxLength) {
-    static uint8_t index = 0;
-
-    while (Serial.available()) {
-        char c = (char)Serial.read();
-
-        /* Handle backspace */
-        if (c == '\b' || c == 127) {
-            if (index > 0) {
-                index--;
-                printf("\b \b");
-            }
-            continue;
-        }
-
-        /* End of line */
-        if (c == '\r' || c == '\n') {
-            buffer[index] = '\0';
-            uint8_t len = index;
-            index = 0;
-            printf("\n");
-            return len;
-        }
-
-        /* Store printable character */
-        if (index < maxLength - 1 && isprint((unsigned char)c)) {
-            buffer[index++] = c;
-            printf("%c", c);  /* echo */
-        }
+    printf("> ");
+    if (scanf(" %31[^\r\n]", buffer) == 1) {
+        return (int)strlen(buffer);
     }
-    return -1;  /* command not yet complete */
+    buffer[0] = '\0';
+    return 0;
 }
 
 static void toLowerStr(char *str) {
@@ -97,5 +74,4 @@ void serialCommandProcess(const char *command) {
         printf("Unknown command: \"%s\"\n", command);
         printf("Use: led on / led off\n");
     }
-    printf("> ");
 }
