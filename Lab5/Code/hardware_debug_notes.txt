@@ -1,0 +1,111 @@
+Hardware debug notes
+
+Observed issues
+- The DHT11 on pin D8 does not return valid readings.
+- The serial output is partially broken: instead of a full report block, the monitor repeatedly shows short fragments like `F` and `thr ...`.
+- Upload sometimes fails with `avrdude: stk500_getsync()` because the board does not enter the bootloader cleanly.
+
+What is already fixed in code
+- DHT reads are rate-limited to one real read every 2 seconds, with cached values between reads.
+- Invalid DHT humidity values are rejected unless they are in the 0..100 percent range.
+- Invalid sensor values are printed as invalid instead of showing garbage numbers.
+
+Most likely causes
+
+1. DHT11 hardware issue
+- Wrong wiring order on the sensor pins.
+- Missing pull-up resistor on the DATA line.
+- Weak jumper contact or bad sensor module.
+
+Correct DHT11 wiring
+- VCC -> 5V
+- GND -> GND
+- DATA -> D8
+- Add a 10k resistor between DATA and 5V if the sensor is bare and not on a breakout module.
+
+Important
+- Many DHT11 sensors have different physical pin order depending on module type.
+- Check the exact label on your sensor board: do not assume left-to-right blindly.
+
+2. Broken terminal output
+- The sketch uses `printf` redirected to Serial.
+- On AVR boards this can become unreliable when the serial line is noisy, the board resets unexpectedly, or upload/reset behavior is unstable.
+- Since the output is cut into fragments, the board is likely resetting, blocking, or the serial stream is being interrupted.
+
+How to fix terminal output
+Option A - easiest and recommended
+- Replace `printf` reporting with direct `Serial.print()` / `Serial.println()` calls.
+- This avoids AVR `stdio` formatting issues entirely.
+
+Files to change
+- `Code/src/tasks/task_reporting.cpp`
+- optionally simplify `Code/src/drivers/serial_stdio_bridge.cpp`
+
+Recommended replacement style
+```cpp
+Serial.println();
+Serial.println("Temps");
+Serial.print("Thermistor ");
+Serial.print(g_appState.analog.temperatureC, 2);
+Serial.println("C");
+```
+
+Option B
+- Keep `printf`, but only after the upload/reset problem is fixed.
+- This is less robust on Uno than direct `Serial.print()`.
+
+3. Upload / reset problem
+Symptoms
+- `avrdude` prints `stk500_getsync()` errors.
+- During upload, the programmer sees normal sketch text like `Temps`, which means the old sketch is still running instead of the bootloader taking control.
+
+How to fix upload issue
+- Disconnect anything from pins 0 and 1.
+- Keep only the required peripherals connected.
+- Press RESET once exactly when upload starts.
+- Try another USB cable if the problem repeats.
+- If using a clone board, the bootloader timing may be unstable.
+
+4. Thermistor check
+- The thermistor side now seems physically correct, but the code expects a voltage divider.
+- Correct connection:
+  - 5V -> thermistor -> A0 -> 10k resistor -> GND
+
+Recommended debug order
+1. Fix DHT11 wiring first and add the 10k pull-up.
+2. Make sure upload works reliably.
+3. Replace `printf` with `Serial.print()` in the reporting task.
+4. Test DHT11 alone with a minimal sketch before combining it back with LCD and buzzer.
+
+Minimal DHT11-only test sketch
+```cpp
+#include <Arduino.h>
+#include <DHT.h>
+
+constexpr uint8_t DHT_PIN = 8;
+DHT dht(DHT_PIN, DHT11);
+
+void setup() {
+  Serial.begin(115200);
+  dht.begin();
+}
+
+void loop() {
+  float h = dht.readHumidity();
+  float t = dht.readTemperature();
+
+  Serial.print("temp=");
+  Serial.print(t);
+  Serial.print("C hum=");
+  Serial.print(h);
+  Serial.println("%");
+
+  delay(2000);
+}
+```
+
+If this minimal sketch still fails:
+- the problem is hardware wiring, pull-up, or the sensor itself, not your main project.
+
+If this minimal sketch works:
+- the next step is to replace the main project's `printf` output with `Serial.print()` output.

@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "author": "OpenCode",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "wokwi-arduino-uno",
+      "id": "uno",
+      "top": -10.8,
+      "left": -27.2,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-ntc-temperature-sensor",
+      "id": "ntc1",
+      "top": 177.6,
+      "left": -220,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-dht22",
+      "id": "dht1",
+      "top": -162,
+      "left": 269,
+      "attrs": {
+        "temperature": "24",
+        "humidity": "45"
+      }
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "pot1",
+      "top": 175,
+      "left": 164,
+      "attrs": {
+        "value": "512"
+      }
+    },
+    {
+      "type": "wokwi-buzzer",
+      "id": "buzz1",
+      "top": 148.8,
+      "left": -18,
+      "attrs": {
+        "volume": "0.6"
+      }
+    },
+    {
+      "type": "wokwi-lcd1602",
+      "id": "lcd1",
+      "top": -292.8,
+      "left": -147.2,
+      "attrs": {
+        "pins": "i2c"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "ledAnalog",
+      "top": -151.2,
+      "left": -242.4,
+      "attrs": {
+        "color": "green"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "ledDigital",
+      "top": -151.2,
+      "left": -192.6,
+      "attrs": {
+        "color": "red"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "rAnalog",
+      "top": -72,
+      "left": -238.8,
+      "attrs": {
+        "value": "220"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "rDigital",
+      "top": -72,
+      "left": -189,
+      "attrs": {
+        "value": "220"
+      }
+    }
+  ],
+  "connections": [
+    ["uno:5V", "lcd1:VCC", "red", ["v-22.8", "h-40.8"]],
+    ["uno:GND.1", "lcd1:GND", "black", ["v-27.6", "h-55.2"]],
+    ["uno:A4", "lcd1:SDA", "green", ["v-18", "h-24"]],
+    ["uno:A5", "lcd1:SCL", "blue", ["v-13.2", "h-18"]],
+
+    ["uno:5V", "ntc1:VCC", "red", ["h-89.6", "v145.2"]],
+    ["uno:GND.2", "ntc1:GND", "black", ["h-99.2", "v154.8"]],
+    ["uno:A0", "ntc1:OUT", "green", ["h-109.2", "v135.6"]],
+
+    ["uno:5V", "dht1:VCC", "red", ["h134.4", "v-163.2"]],
+    ["uno:2", "dht1:SDA", "green", ["h124.8", "v-144"]],
+    ["uno:GND.1", "dht1:GND", "black", ["h144", "v-153.6"]],
+
+    ["uno:5V", "pot1:VCC", "red", ["v0"]],
+    ["uno:A1", "pot1:SIG", "green", ["v0"]],
+    ["uno:GND.2", "pot1:GND", "black", ["v0"]],
+
+    ["buzz1:1", "uno:GND.1", "black", ["v0"]],
+    ["buzz1:2", "uno:10", "orange", ["v0"]],
+
+    ["uno:8", "rAnalog:1", "green", ["v0"]],
+    ["rAnalog:2", "ledAnalog:A", "green", ["v0"]],
+    ["ledAnalog:C", "uno:GND.1", "black", ["v0"]],
+
+    ["uno:9", "rDigital:1", "green", ["v0"]],
+    ["rDigital:2", "ledDigital:A", "green", ["v0"]],
+    ["ledDigital:C", "uno:GND.1", "black", ["v0"]]
+  ],
+  "dependencies": {}
+}
