@@ -1,0 +1,57 @@
+#include "lcd_display.h"
+
+#include <Arduino.h>
+#include <LiquidCrystal.h>
+#include <math.h>
+#include <stdio.h>
+
+#include "app_config.h"
+
+namespace {
+LiquidCrystal g_lcd(LCD_RS_PIN, LCD_ENABLE_PIN, LCD_D4_PIN, LCD_D5_PIN, LCD_D6_PIN, LCD_D7_PIN);
+
+void writePaddedLine(uint8_t row, const char *text) {
+  char buffer[LCD_COLUMNS + 1] = {};
+  snprintf(buffer, sizeof(buffer), "%-16.16s", text);
+  g_lcd.setCursor(0, row);
+  g_lcd.print(buffer);
+}
+
+const char *alertMark(bool enabled) {
+  return enabled ? "!" : "-";
+}
+}  // namespace
+
+void lcdDisplayInit() {
+  g_lcd.begin(LCD_COLUMNS, LCD_ROWS);
+  writePaddedLine(0, "Lab6 Part 2");
+  writePaddedLine(1, "Starting...");
+}
+
+void lcdDisplayRender(const SensorRuntimeData &analogData, const SensorRuntimeData &digitalData) {
+  char line0[LCD_COLUMNS + 1] = {};
+  char line1[LCD_COLUMNS + 1] = {};
+
+  if (analogData.valid) {
+    snprintf(line0,
+             sizeof(line0),
+             "A:%5.1fC  %s",
+             static_cast<double>(analogData.temperatureC),
+             alertMark(analogData.stableAlert));
+  } else {
+    snprintf(line0, sizeof(line0), "A: waiting  %s", alertMark(false));
+  }
+
+  if (digitalData.valid) {
+    snprintf(line1,
+             sizeof(line1),
+             "D:%5.1fC  %s",
+             static_cast<double>(digitalData.temperatureC),
+             alertMark(digitalData.stableAlert));
+  } else {
+    snprintf(line1, sizeof(line1), "D: waiting  %s", alertMark(false));
+  }
+
+  writePaddedLine(0, line0);
+  writePaddedLine(1, line1);
+}
