@@ -6,6 +6,7 @@
 
 #include "app/app_state.h"
 #include "drivers/lcd_display.h"
+#include "drivers/serial_stdio.h"
 
 namespace {
 
@@ -35,7 +36,9 @@ void printSnapshot(const char *reason) {
            g_appState.binary.alertPending ? 1 : 0,
            (g_appState.analog.saturationAlert || g_appState.analog.limitAlert) ? 1 : 0);
 
-  lcdDisplayShowLines(line1, line2);
+  serialStdioSetLcdMirror(true);
+  printf_P(PSTR("\f%s\n%s\n"), line1, line2);
+  serialStdioSetLcdMirror(false);
 
   printf_P(PSTR("REPORT reason=%s mode=%s binary_raw=%s binary_cond=%s binary_out=%s binary_alert=%u debounce_ms=%u binary_latency_ms=%lu analog_raw=%d analog_sat=%d analog_med=%d analog_avg=%d analog_ramp=%d analog_out=%d pwm=%u analog_alert=%u analog_latency_ms=%lu ok=%u err=%u tr=%u last=%s\n"),
          reason,

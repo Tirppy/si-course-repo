@@ -4,6 +4,7 @@
 #include <Arduino.h>
 
 void lcdDisplayInit();
-void lcdDisplayShowLines(const char *line1, const char *line2);
+void lcdDisplayClearConsole();
+void lcdDisplayPutChar(char character);
 
 #endif

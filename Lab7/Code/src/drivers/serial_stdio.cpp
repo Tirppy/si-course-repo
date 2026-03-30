@@ -2,10 +2,21 @@
 
 #include <stdio.h>
 
+#include "drivers/lcd_display.h"
+
 namespace {
+
+bool g_lcdMirrorEnabled = false;
 
 int serialPutChar(char character, FILE *stream) {
   (void)stream;
+  if (g_lcdMirrorEnabled) {
+    lcdDisplayPutChar(character);
+  }
+
+  if (character == '\f') {
+    return 0;
+  }
 
   if (character == '\n') {
     Serial.write('\r');
@@ -34,4 +45,8 @@ void serialStdioInit(unsigned long baudRate) {
   stdin = &g_serialStream;
   stdout = &g_serialStream;
   stderr = &g_serialStream;
+}
+
+void serialStdioSetLcdMirror(bool enabled) {
+  g_lcdMirrorEnabled = enabled;
 }

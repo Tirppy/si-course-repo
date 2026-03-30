@@ -85,6 +85,9 @@ void appControllerSetup() {
   taskActuatorSetup();
   taskReportingSetup();
 
+  serialStdioSetLcdMirror(true);
+  printf_P(PSTR("\fLab5 Variant C\nType HELP\n"));
+  serialStdioSetLcdMirror(false);
   printf_P(PSTR("Lab 5 Variant C ready\n"));
   printf_P(PSTR("Type HELP for commands\n"));
 }
