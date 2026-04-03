@@ -4,6 +4,5 @@
 #include <Arduino.h>
 
 void serialStdioInit(unsigned long baudRate);
-void serialStdioSetLcdMirror(bool enabled);
 
 #endif

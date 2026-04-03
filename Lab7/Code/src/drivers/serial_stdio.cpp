@@ -1,35 +1,17 @@
 #include "drivers/serial_stdio.h"
 
+#include <Arduino.h>
 #include <stdio.h>
-
-#include "drivers/lcd_display.h"
 
 namespace {
 
-bool g_lcdMirrorEnabled = false;
-
-int serialPutChar(char character, FILE *stream) {
-  (void)stream;
-  if (g_lcdMirrorEnabled) {
-    lcdDisplayPutChar(character);
-  }
-
-  if (character == '\f') {
-    return 0;
-  }
+int serialPutChar(char character, FILE *) {
 
   if (character == '\n') {
     Serial.write('\r');
   }
-  Serial.write(character);
+  Serial.write(static_cast<uint8_t>(character));
   return 0;
-}
-
-int serialGetChar(FILE *stream) {
-  (void)stream;
-  while (!Serial.available()) {
-  }
-  return Serial.read();
 }
 
 FILE g_serialStream;
@@ -41,12 +23,6 @@ void serialStdioInit(unsigned long baudRate) {
   while (!Serial) {
   }
 
-  fdev_setup_stream(&g_serialStream, serialPutChar, serialGetChar, _FDEV_SETUP_RW);
-  stdin = &g_serialStream;
+  fdev_setup_stream(&g_serialStream, serialPutChar, nullptr, _FDEV_SETUP_WRITE);
   stdout = &g_serialStream;
-  stderr = &g_serialStream;
-}
-
-void serialStdioSetLcdMirror(bool enabled) {
-  g_lcdMirrorEnabled = enabled;
 }

@@ -7,7 +7,7 @@
 
 #include "app/app_state.h"
 #include "services/analog_conditioning.h"
-#include "services/command_conditioning.h"
+#include "services/binary_conditioning.h"
 #include "services/command_parser.h"
 #include "services/runtime_telemetry.h"
 #include "tasks/task_reporting.h"
@@ -23,15 +23,15 @@ bool g_lastCharacterWasTerminator = false;
 
 void printHelp() {
   printf_P(PSTR("Commands:\n"));
-  printf_P(PSTR(" SET_RELAY ON|OFF\n"));
   printf_P(PSTR(" ON | OFF\n"));
-  printf_P(PSTR(" SET_ANALOG <0..100>\n"));
-  printf_P(PSTR(" ANALOG_UP | ANALOG_DOWN | ANALOG_STOP\n"));
+  printf_P(PSTR(" SET_LED ON|OFF\n"));
+  printf_P(PSTR(" SET_STEPPER <0..100>  (0=stop, >0=rotation speed)\n"));
+  printf_P(PSTR(" STEPPER_UP | STEPPER_DOWN | STEPPER_STOP\n"));
   printf_P(PSTR(" STATUS | REPORT\n"));
   printf_P(PSTR(" INPUT SERIAL|HARDWARE|HYBRID\n"));
+  printf_P(PSTR(" DEBOUNCE <20..500>\n"));
   printf_P(PSTR(" HISTORY | HISTORY CLEAR\n"));
   printf_P(PSTR(" STATS | STATS RESET\n"));
-  printf_P(PSTR(" DEBOUNCE <20..500>\n"));
   printf_P(PSTR(" AUTOREPORT ON|OFF\n"));
   printf_P(PSTR(" PLOT ON|OFF\n"));
 }
@@ -45,49 +45,64 @@ void handleParsedCommand(const ParsedCommand &parsed, const char *commandText) {
   const unsigned long nowMs = millis();
   storeLastCommand(commandText);
 
+  if (g_appState.inputMode == INPUT_MODE_HARDWARE &&
+      (parsed.type == PARSED_COMMAND_SET_BINARY_STATE ||
+       parsed.type == PARSED_COMMAND_SET_ANALOG_LEVEL ||
+       parsed.type == PARSED_COMMAND_ANALOG_UP ||
+       parsed.type == PARSED_COMMAND_ANALOG_DOWN ||
+       parsed.type == PARSED_COMMAND_ANALOG_STOP)) {
+    ++g_appState.rejectedCommandCount;
+    printf_P(PSTR("ERR stepper control is hardware-driven in INPUT HARDWARE mode\n"));
+    return;
+  }
+
   switch (parsed.type) {
     case PARSED_COMMAND_SET_BINARY_STATE:
-      commandConditioningSetRawCommand(parsed.actuatorCommand, nowMs);
+      binaryConditioningSetRawState(parsed.binaryState, nowMs);
       ++g_appState.acceptedCommandCount;
-      runtimeTelemetryLog(RUNTIME_EVENT_BINARY_CMD,
-                          parsed.actuatorCommand == ACTUATOR_COMMAND_ON ? 1 : 0,
-                          nowMs);
-      printf_P(PSTR("ACK binary command %s accepted; debounce pending\n"),
-              actuatorCommandToText(parsed.actuatorCommand));
+      runtimeTelemetryLog(RUNTIME_EVENT_BINARY_CMD, parsed.binaryState ? 1 : 0, nowMs);
+      printf_P(PSTR("ACK binary actuator request %s accepted\n"), parsed.binaryState ? "ON" : "OFF");
       break;
 
     case PARSED_COMMAND_SET_ANALOG_LEVEL:
       analogConditioningSetRawPercent(parsed.analogPercent, nowMs);
       ++g_appState.acceptedCommandCount;
       runtimeTelemetryLog(RUNTIME_EVENT_ANALOG_CMD, static_cast<int16_t>(parsed.analogPercent), nowMs);
-      printf_P(PSTR("ACK analog request %d%% accepted\n"), static_cast<int>(parsed.analogPercent));
+      printf_P(PSTR("ACK stepper request %d%% accepted\n"), static_cast<int>(parsed.analogPercent));
       break;
 
     case PARSED_COMMAND_ANALOG_UP:
       analogConditioningSetRawPercent(g_appState.analog.rawPercent + ANALOG_STEP_PERCENT, nowMs);
       ++g_appState.acceptedCommandCount;
       runtimeTelemetryLog(RUNTIME_EVENT_ANALOG_CMD, static_cast<int16_t>(g_appState.analog.rawPercent), nowMs);
-      printf_P(PSTR("ACK analog step up\n"));
+      printf_P(PSTR("ACK stepper step up\n"));
       break;
 
     case PARSED_COMMAND_ANALOG_DOWN:
       analogConditioningSetRawPercent(g_appState.analog.rawPercent - ANALOG_STEP_PERCENT, nowMs);
       ++g_appState.acceptedCommandCount;
       runtimeTelemetryLog(RUNTIME_EVENT_ANALOG_CMD, static_cast<int16_t>(g_appState.analog.rawPercent), nowMs);
-      printf_P(PSTR("ACK analog step down\n"));
+      printf_P(PSTR("ACK stepper step down\n"));
       break;
 
     case PARSED_COMMAND_ANALOG_STOP:
       analogConditioningSetRawPercent(0.0F, nowMs);
       ++g_appState.acceptedCommandCount;
       runtimeTelemetryLog(RUNTIME_EVENT_ANALOG_CMD, 0, nowMs);
-      printf_P(PSTR("ACK analog stop\n"));
+      printf_P(PSTR("ACK stepper stop\n"));
       break;
 
     case PARSED_COMMAND_STATUS:
     case PARSED_COMMAND_REPORT:
       ++g_appState.acceptedCommandCount;
       taskReportingPrintImmediate("manual");
+      break;
+
+    case PARSED_COMMAND_SET_DEBOUNCE:
+      binaryConditioningSetDebounceWindow(parsed.debounceWindowMs);
+      g_appState.binary.debounceWindowMs = parsed.debounceWindowMs;
+      ++g_appState.acceptedCommandCount;
+      printf_P(PSTR("ACK binary debounce set to %u ms\n"), parsed.debounceWindowMs);
       break;
 
     case PARSED_COMMAND_SET_INPUT_MODE:
@@ -124,13 +139,6 @@ void handleParsedCommand(const ParsedCommand &parsed, const char *commandText) {
     case PARSED_COMMAND_HELP:
       ++g_appState.acceptedCommandCount;
       printHelp();
-      break;
-
-    case PARSED_COMMAND_SET_DEBOUNCE:
-      commandConditioningSetDebounceWindow(parsed.debounceWindowMs);
-      g_appState.binary.debounceWindowMs = parsed.debounceWindowMs;
-      ++g_appState.acceptedCommandCount;
-      printf_P(PSTR("ACK debounce window set to %u ms\n"), parsed.debounceWindowMs);
       break;
 
     case PARSED_COMMAND_SET_AUTOREPORT:

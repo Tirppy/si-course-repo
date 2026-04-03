@@ -3,12 +3,12 @@
 #include <Arduino.h>
 
 #include "services/analog_conditioning.h"
-#include "services/command_conditioning.h"
+#include "services/binary_conditioning.h"
 
 void taskConditioningSetup() {
 }
 
 void taskConditioningRun() {
-  commandConditioningUpdate(millis());
+  binaryConditioningUpdate(millis());
   analogConditioningStep();
 }

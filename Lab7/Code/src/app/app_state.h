@@ -3,11 +3,6 @@
 
 #include <Arduino.h>
 
-enum ActuatorCommand : uint8_t {
-  ACTUATOR_COMMAND_OFF = 0,
-  ACTUATOR_COMMAND_ON = 1,
-};
-
 enum InputMode : uint8_t {
   INPUT_MODE_SERIAL = 0,
   INPUT_MODE_HARDWARE = 1,
@@ -15,12 +10,15 @@ enum InputMode : uint8_t {
 };
 
 struct BinaryActuatorState {
-  ActuatorCommand rawCommand;
-  ActuatorCommand conditionedCommand;
+  bool rawState;
+  bool saturatedState;
+  bool candidateState;
+  bool conditionedState;
   bool actuatorState;
   bool alertPending;
   uint16_t debounceWindowMs;
-  uint16_t lastDebounceLatencyMs;
+  uint16_t persistSamples;
+  uint16_t confirmationCounter;
   unsigned long lastCommandAtMs;
   unsigned long lastActuatorAtMs;
 };
@@ -39,9 +37,15 @@ struct AnalogActuatorState {
   unsigned long lastActuatorAtMs;
 };
 
+struct LedIndicatorState {
+  bool requestedState;
+  bool appliedState;
+};
+
 struct AppRuntimeState {
   BinaryActuatorState binary;
   AnalogActuatorState analog;
+  LedIndicatorState led;
   uint16_t acceptedCommandCount;
   uint16_t rejectedCommandCount;
   uint16_t transitionCount;
@@ -53,7 +57,6 @@ struct AppRuntimeState {
 
 extern AppRuntimeState g_appState;
 
-const char *actuatorCommandToText(ActuatorCommand command);
 const char *inputModeToText(InputMode mode);
 
 #endif

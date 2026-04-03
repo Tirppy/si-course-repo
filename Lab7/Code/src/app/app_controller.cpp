@@ -4,12 +4,12 @@
 #include <string.h>
 
 #include "app/app_state.h"
-#include "drivers/actuator_led.h"
-#include "drivers/analog_servo.h"
+#include "drivers/motor_driver.h"
 #include "drivers/lcd_display.h"
+#include "drivers/indicator_led.h"
 #include "drivers/serial_stdio.h"
 #include "services/analog_conditioning.h"
-#include "services/command_conditioning.h"
+#include "services/binary_conditioning.h"
 #include "services/runtime_telemetry.h"
 #include "tasks/task_actuator.h"
 #include "tasks/task_command.h"
@@ -29,8 +29,9 @@ constexpr uint32_t COMMAND_TASK_PERIOD_MS = 20U;
 constexpr uint32_t INPUTS_TASK_PERIOD_MS = 20U;
 constexpr uint32_t CONDITIONING_TASK_PERIOD_MS = 20U;
 constexpr uint32_t ACTUATOR_TASK_PERIOD_MS = 20U;
-constexpr uint32_t REPORTING_TASK_PERIOD_MS = 1000U;
-constexpr uint16_t DEFAULT_DEBOUNCE_WINDOW_MS = 80U;
+constexpr uint32_t REPORTING_TASK_PERIOD_MS = 500U;
+constexpr uint16_t DEFAULT_BINARY_DEBOUNCE_MS = 60U;
+constexpr uint16_t DEFAULT_BINARY_PERSIST_SAMPLES = 2U;
 
 ScheduledTask g_tasks[] = {
     {taskCommandRun, COMMAND_TASK_PERIOD_MS, 0U},
@@ -43,8 +44,9 @@ ScheduledTask g_tasks[] = {
 }  // namespace
 
 AppRuntimeState g_appState = {
-    {ACTUATOR_COMMAND_OFF, ACTUATOR_COMMAND_OFF, false, false, DEFAULT_DEBOUNCE_WINDOW_MS, 0U, 0U, 0U},
+    {false, false, false, false, false, false, DEFAULT_BINARY_DEBOUNCE_MS, DEFAULT_BINARY_PERSIST_SAMPLES, 0U, 0U, 0U},
     {0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0U, false, true, 0U, 0U},
+    {false, false},
     0U,
     0U,
     0U,
@@ -53,10 +55,6 @@ AppRuntimeState g_appState = {
     true,
     "BOOT",
 };
-
-const char *actuatorCommandToText(ActuatorCommand command) {
-  return command == ACTUATOR_COMMAND_ON ? "ON" : "OFF";
-}
 
 const char *inputModeToText(InputMode mode) {
   switch (mode) {
@@ -71,11 +69,11 @@ const char *inputModeToText(InputMode mode) {
 }
 
 void appControllerSetup() {
-  actuatorLedInit();
-  analogServoInit();
+  motorDriverInit();
+  indicatorLedInit();
   lcdDisplayInit();
   serialStdioInit(115200UL);
-  commandConditioningInit(DEFAULT_DEBOUNCE_WINDOW_MS);
+  binaryConditioningInit(DEFAULT_BINARY_DEBOUNCE_MS, DEFAULT_BINARY_PERSIST_SAMPLES);
   analogConditioningInit();
   runtimeTelemetryInit();
 
@@ -85,10 +83,7 @@ void appControllerSetup() {
   taskActuatorSetup();
   taskReportingSetup();
 
-  serialStdioSetLcdMirror(true);
-  printf_P(PSTR("\fLab5 Variant C\nType HELP\n"));
-  serialStdioSetLcdMirror(false);
-  printf_P(PSTR("Lab 5 Variant C ready\n"));
+  printf_P(PSTR("Lab 7 binary+analog ready\n"));
   printf_P(PSTR("Type HELP for commands\n"));
 }
 

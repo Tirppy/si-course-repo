@@ -10,6 +10,15 @@ bool hardwareInputsReadButtonPressed() {
 
 uint8_t hardwareInputsReadPotPercent() {
   const int adcValue = analogRead(POTENTIOMETER_PIN);
-  const long percent = map(adcValue, 0, 1023, 0, 100);
+  int normalizedValue = adcValue;
+  if (normalizedValue <= 20) {
+    normalizedValue = 0;
+  } else if (normalizedValue >= 1003) {
+    normalizedValue = 1023;
+  } else {
+    normalizedValue = map(normalizedValue, 21, 1002, 0, 1023);
+  }
+
+  const long percent = map(normalizedValue, 0, 1023, 0, 100);
   return static_cast<uint8_t>(percent);
 }

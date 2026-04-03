@@ -34,9 +34,9 @@ const char *eventTypeToText(uint8_t type) {
     case RUNTIME_EVENT_BINARY_OUT:
       return "BIN_OUT";
     case RUNTIME_EVENT_ANALOG_CMD:
-      return "ANA_CMD";
+      return "STP_CMD";
     case RUNTIME_EVENT_ANALOG_OUT:
-      return "ANA_OUT";
+      return "STP_OUT";
     case RUNTIME_EVENT_INPUT_MODE:
       return "INPUT";
     case RUNTIME_EVENT_INVALID_CMD:
@@ -128,7 +128,7 @@ void runtimeTelemetryClearHistory() {
 void runtimeTelemetryPrintStats() {
   printf_P(PSTR("STATS\n"));
   printStatsLine("BINARY", g_binaryStats);
-  printStatsLine("ANALOG", g_analogStats);
+  printStatsLine("STEPPER", g_analogStats);
 }
 
 void runtimeTelemetryResetStats() {

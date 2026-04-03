@@ -83,7 +83,7 @@ float applyRamp(float currentValue, float targetValue) {
   return targetValue;
 }
 
-uint8_t percentToDegrees(float percent) {
+uint8_t percentToPwm(float percent) {
   const long roundedPercent = lroundf(percent);
   const long pwmValue = map(roundedPercent, 0L, 100L, 0L, 255L);
   return static_cast<uint8_t>(pwmValue);
@@ -140,5 +140,5 @@ void analogConditioningStep() {
       (g_appState.analog.conditionedPercent <= 0.0F) ||
       (g_appState.analog.conditionedPercent >= 100.0F) ||
       g_appState.analog.saturationAlert;
-  g_appState.analog.pwmValue = percentToDegrees(g_appState.analog.conditionedPercent);
+  g_appState.analog.pwmValue = percentToPwm(g_appState.analog.conditionedPercent);
 }

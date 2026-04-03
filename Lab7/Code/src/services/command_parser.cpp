@@ -17,14 +17,14 @@ void normalizeToken(const char *source, char *destination, size_t size) {
 }
 
 ParsedCommand invalidCommand() {
-  ParsedCommand command = {PARSED_COMMAND_INVALID, ACTUATOR_COMMAND_OFF, 0.0F, 0U, INPUT_MODE_HYBRID, false, false};
+  ParsedCommand command = {PARSED_COMMAND_INVALID, false, 0.0F, 0U, INPUT_MODE_HYBRID, false, false};
   return command;
 }
 
 }  // namespace
 
 ParsedCommand parseCommandLine(const char *lineBuffer) {
-  ParsedCommand parsed = {PARSED_COMMAND_NONE, ACTUATOR_COMMAND_OFF, 0.0F, 0U, INPUT_MODE_HYBRID, false, false};
+  ParsedCommand parsed = {PARSED_COMMAND_NONE, false, 0.0F, 0U, INPUT_MODE_HYBRID, false, false};
   char localBuffer[48];
   char firstToken[24];
   char secondToken[24];
@@ -48,34 +48,32 @@ ParsedCommand parseCommandLine(const char *lineBuffer) {
   normalizeToken(extraToken, extraToken, sizeof(extraToken));
 
   if (strcmp(firstToken, "ON") == 0) {
-      parsed.type = PARSED_COMMAND_SET_BINARY_STATE;
-      parsed.actuatorCommand = ACTUATOR_COMMAND_ON;
-      return parsed;
+    parsed.type = PARSED_COMMAND_SET_BINARY_STATE;
+    parsed.binaryState = true;
+    return parsed;
   }
 
   if (strcmp(firstToken, "OFF") == 0) {
-      parsed.type = PARSED_COMMAND_SET_BINARY_STATE;
-      parsed.actuatorCommand = ACTUATOR_COMMAND_OFF;
-      return parsed;
+    parsed.type = PARSED_COMMAND_SET_BINARY_STATE;
+    parsed.binaryState = false;
+    return parsed;
   }
 
-  if (strcmp(firstToken, "SET_RELAY") == 0) {
+  if (strcmp(firstToken, "SET_LED") == 0 || strcmp(firstToken, "SET_ACTUATOR") == 0) {
     if (strcmp(secondToken, "ON") == 0) {
       parsed.type = PARSED_COMMAND_SET_BINARY_STATE;
-      parsed.actuatorCommand = ACTUATOR_COMMAND_ON;
+      parsed.binaryState = true;
       return parsed;
     }
-
     if (strcmp(secondToken, "OFF") == 0) {
       parsed.type = PARSED_COMMAND_SET_BINARY_STATE;
-      parsed.actuatorCommand = ACTUATOR_COMMAND_OFF;
+      parsed.binaryState = false;
       return parsed;
     }
-
     return invalidCommand();
   }
 
-  if (strcmp(firstToken, "SET_ANALOG") == 0) {
+  if (strcmp(firstToken, "SET_STEPPER") == 0 || strcmp(firstToken, "SET_MOTOR") == 0) {
     char *endPointer = nullptr;
     const long analogPercentLong = strtol(secondToken, &endPointer, 10);
     if (endPointer == secondToken || *endPointer != '\0') {
@@ -87,17 +85,17 @@ ParsedCommand parseCommandLine(const char *lineBuffer) {
     return parsed;
   }
 
-  if (strcmp(firstToken, "ANALOG_UP") == 0) {
+  if (strcmp(firstToken, "STEPPER_UP") == 0 || strcmp(firstToken, "MOTOR_UP") == 0) {
     parsed.type = PARSED_COMMAND_ANALOG_UP;
     return parsed;
   }
 
-  if (strcmp(firstToken, "ANALOG_DOWN") == 0) {
+  if (strcmp(firstToken, "STEPPER_DOWN") == 0 || strcmp(firstToken, "MOTOR_DOWN") == 0) {
     parsed.type = PARSED_COMMAND_ANALOG_DOWN;
     return parsed;
   }
 
-  if (strcmp(firstToken, "ANALOG_STOP") == 0) {
+  if (strcmp(firstToken, "STEPPER_STOP") == 0 || strcmp(firstToken, "MOTOR_STOP") == 0) {
     parsed.type = PARSED_COMMAND_ANALOG_STOP;
     return parsed;
   }
@@ -114,6 +112,20 @@ ParsedCommand parseCommandLine(const char *lineBuffer) {
 
   if (strcmp(firstToken, "REPORT") == 0) {
     parsed.type = PARSED_COMMAND_REPORT;
+    return parsed;
+  }
+
+  if (strcmp(firstToken, "DEBOUNCE") == 0) {
+    char *endPointer = nullptr;
+    const long debounceWindowMs = strtol(secondToken, &endPointer, 10);
+    if (endPointer == secondToken || *endPointer != '\0') {
+      return invalidCommand();
+    }
+    if (debounceWindowMs < 20L || debounceWindowMs > 500L) {
+      return invalidCommand();
+    }
+    parsed.type = PARSED_COMMAND_SET_DEBOUNCE;
+    parsed.debounceWindowMs = static_cast<uint16_t>(debounceWindowMs);
     return parsed;
   }
 
@@ -184,17 +196,6 @@ ParsedCommand parseCommandLine(const char *lineBuffer) {
     }
 
     return invalidCommand();
-  }
-
-  if (strcmp(firstToken, "DEBOUNCE") == 0) {
-    const long debounceWindowMs = strtol(secondToken, nullptr, 10);
-    if (debounceWindowMs < 20L || debounceWindowMs > 500L) {
-      return invalidCommand();
-    }
-
-    parsed.type = PARSED_COMMAND_SET_DEBOUNCE;
-    parsed.debounceWindowMs = static_cast<uint16_t>(debounceWindowMs);
-    return parsed;
   }
 
   return invalidCommand();

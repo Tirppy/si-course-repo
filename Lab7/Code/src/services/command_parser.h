@@ -14,8 +14,8 @@ enum ParsedCommandType : uint8_t {
   PARSED_COMMAND_ANALOG_STOP,
   PARSED_COMMAND_STATUS,
   PARSED_COMMAND_HELP,
-  PARSED_COMMAND_SET_DEBOUNCE,
   PARSED_COMMAND_REPORT,
+  PARSED_COMMAND_SET_DEBOUNCE,
   PARSED_COMMAND_SET_INPUT_MODE,
   PARSED_COMMAND_PRINT_HISTORY,
   PARSED_COMMAND_CLEAR_HISTORY,
@@ -28,7 +28,7 @@ enum ParsedCommandType : uint8_t {
 
 struct ParsedCommand {
   ParsedCommandType type;
-  ActuatorCommand actuatorCommand;
+  bool binaryState;
   float analogPercent;
   uint16_t debounceWindowMs;
   InputMode inputMode;

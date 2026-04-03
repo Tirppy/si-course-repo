@@ -5,8 +5,8 @@
 #include <stdio.h>
 
 #include "app/app_state.h"
+#include "drivers/hardware_inputs.h"
 #include "drivers/lcd_display.h"
-#include "drivers/serial_stdio.h"
 
 namespace {
 
@@ -15,9 +15,6 @@ int toRoundedInt(float value) {
 }
 
 void printSnapshot(const char *reason) {
-  const char *rawState = actuatorCommandToText(g_appState.binary.rawCommand);
-  const char *conditionedState = actuatorCommandToText(g_appState.binary.conditionedCommand);
-  const char *actuatorState = g_appState.binary.actuatorState ? "ON" : "OFF";
   char line1[17];
   char line2[17];
   const unsigned long binaryLatencyMs =
@@ -29,47 +26,53 @@ void printSnapshot(const char *reason) {
           ? (g_appState.analog.lastActuatorAtMs - g_appState.analog.lastCommandAtMs)
           : 0UL;
 
-  snprintf_P(line1, sizeof(line1), PSTR("B:%s A:%03d%%"), actuatorState,
-           toRoundedInt(g_appState.analog.appliedPercent));
+  snprintf_P(line1, sizeof(line1), PSTR("B:%s A:%03d%%"),
+             g_appState.led.appliedState ? "ON" : "OFF",
+             toRoundedInt(g_appState.analog.appliedPercent));
   snprintf_P(line2, sizeof(line2), PSTR("%s b%d a%d"),
+             inputModeToText(g_appState.inputMode),
+             hardwareInputsReadButtonPressed() ? 1 : 0,
+             (g_appState.analog.saturationAlert || g_appState.analog.limitAlert) ? 1 : 0);
+
+  lcdDisplayShowLines(line1, line2);
+
+  printf_P(PSTR("REPORT reason=%s mode=%s led=%u stepper_raw=%d stepper_sat=%d stepper_med=%d stepper_avg=%d stepper_ramp=%d stepper_out=%d pos_pct=%u stepper_alert=%u stepper_latency_ms=%lu ok=%u err=%u tr=%u last=%s button=%u\n"),
+           reason,
            inputModeToText(g_appState.inputMode),
-           g_appState.binary.alertPending ? 1 : 0,
-           (g_appState.analog.saturationAlert || g_appState.analog.limitAlert) ? 1 : 0);
+           g_appState.led.appliedState ? 1U : 0U,
+           toRoundedInt(g_appState.analog.rawPercent),
+           toRoundedInt(g_appState.analog.saturatedPercent),
+           toRoundedInt(g_appState.analog.medianPercent),
+           toRoundedInt(g_appState.analog.weightedPercent),
+           toRoundedInt(g_appState.analog.conditionedPercent),
+           toRoundedInt(g_appState.analog.appliedPercent),
+           g_appState.analog.pwmValue,
+           (g_appState.analog.saturationAlert || g_appState.analog.limitAlert) ? 1U : 0U,
+           analogLatencyMs,
+           g_appState.acceptedCommandCount,
+           g_appState.rejectedCommandCount,
+           g_appState.transitionCount,
+           g_appState.lastCommandText,
+           hardwareInputsReadButtonPressed() ? 1U : 0U);
 
-  serialStdioSetLcdMirror(true);
-  printf_P(PSTR("\f%s\n%s\n"), line1, line2);
-  serialStdioSetLcdMirror(false);
-
-  printf_P(PSTR("REPORT reason=%s mode=%s binary_raw=%s binary_cond=%s binary_out=%s binary_alert=%u debounce_ms=%u binary_latency_ms=%lu analog_raw=%d analog_sat=%d analog_med=%d analog_avg=%d analog_ramp=%d analog_out=%d pwm=%u analog_alert=%u analog_latency_ms=%lu ok=%u err=%u tr=%u last=%s\n"),
-         reason,
-         inputModeToText(g_appState.inputMode),
-         rawState,
-         conditionedState,
-         actuatorState,
-         g_appState.binary.alertPending ? 1U : 0U,
-         g_appState.binary.debounceWindowMs,
-         binaryLatencyMs,
-         toRoundedInt(g_appState.analog.rawPercent),
-         toRoundedInt(g_appState.analog.saturatedPercent),
-         toRoundedInt(g_appState.analog.medianPercent),
-         toRoundedInt(g_appState.analog.weightedPercent),
-         toRoundedInt(g_appState.analog.conditionedPercent),
-         toRoundedInt(g_appState.analog.appliedPercent),
-         g_appState.analog.pwmValue,
-         (g_appState.analog.saturationAlert || g_appState.analog.limitAlert) ? 1U : 0U,
-         analogLatencyMs,
-         g_appState.acceptedCommandCount,
-         g_appState.rejectedCommandCount,
-         g_appState.transitionCount,
-         g_appState.lastCommandText);
+  printf_P(PSTR("BINARY raw=%u sat=%u cand=%u cond=%u out=%u pending=%u debounce_ms=%u persist=%u count=%u latency_ms=%lu\n"),
+           static_cast<unsigned>(g_appState.binary.rawState),
+           static_cast<unsigned>(g_appState.binary.saturatedState),
+           static_cast<unsigned>(g_appState.binary.candidateState),
+           static_cast<unsigned>(g_appState.binary.conditionedState),
+           static_cast<unsigned>(g_appState.binary.actuatorState),
+           g_appState.binary.alertPending ? 1U : 0U,
+           g_appState.binary.debounceWindowMs,
+           g_appState.binary.persistSamples,
+           g_appState.binary.confirmationCounter,
+           binaryLatencyMs);
 
   if (g_appState.plotEnabled) {
-    printf_P(PSTR("binary_raw:%u,binary_cond:%u,binary_out:%u,analog_raw:%d,analog_out:%d\n"),
-           static_cast<unsigned>(g_appState.binary.rawCommand),
-           static_cast<unsigned>(g_appState.binary.conditionedCommand),
-           static_cast<unsigned>(g_appState.binary.actuatorState),
-           toRoundedInt(g_appState.analog.rawPercent),
-           toRoundedInt(g_appState.analog.appliedPercent));
+    printf_P(PSTR("led:%u,stepper_raw:%d,stepper_out:%d,button:%u\n"),
+             g_appState.led.appliedState ? 1U : 0U,
+             toRoundedInt(g_appState.analog.rawPercent),
+             toRoundedInt(g_appState.analog.appliedPercent),
+             hardwareInputsReadButtonPressed() ? 1U : 0U);
   }
 }
 

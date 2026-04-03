@@ -5,7 +5,7 @@
 #include "app/app_state.h"
 #include "drivers/hardware_inputs.h"
 #include "services/analog_conditioning.h"
-#include "services/command_conditioning.h"
+#include "services/binary_conditioning.h"
 #include "services/runtime_telemetry.h"
 
 namespace {
@@ -36,7 +36,7 @@ void taskInputsRun() {
 
   if (buttonPressed != g_lastButtonPressed) {
     g_lastButtonPressed = buttonPressed;
-    commandConditioningSetRawCommand(buttonPressed ? ACTUATOR_COMMAND_ON : ACTUATOR_COMMAND_OFF, nowMs);
+    binaryConditioningSetRawState(buttonPressed, nowMs);
     runtimeTelemetryLog(RUNTIME_EVENT_BINARY_CMD, buttonPressed ? 1 : 0, nowMs);
   }
 
