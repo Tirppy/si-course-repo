@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "author": "OpenCode",
+  "editor": "wokwi",
+  "serialMonitor": {
+    "display": "always",
+    "newline": "lf",
+    "convertEol": true
+  },
+  "parts": [
+    {
+      "type": "wokwi-arduino-uno",
+      "id": "uno",
+      "top": -8,
+      "left": -4,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-lcd1602",
+      "id": "lcd1",
+      "top": 232,
+      "left": -22,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-led",
+      "id": "indicatorLed",
+      "top": -118,
+      "left": 246,
+      "attrs": { "color": "red", "label": "Binary actuator" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "indicatorRes",
+      "top": -68,
+      "left": 244,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "motorLed",
+      "top": -118,
+      "left": 334,
+      "attrs": { "color": "yellow", "label": "Analog PWM proxy" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "motorRes",
+      "top": -68,
+      "left": 332,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "cmdButton",
+      "top": 54,
+      "left": 254,
+      "attrs": { "color": "green", "label": "Binary input" }
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "cmdPot",
+      "top": 118,
+      "left": 230,
+      "attrs": { "label": "Analog input" }
+    }
+  ],
+  "connections": [
+    ["uno:5V", "lcd1:VDD", "red", ["v0"]],
+    ["uno:GND.1", "lcd1:VSS", "black", ["v0"]],
+    ["uno:GND.1", "lcd1:RW", "black", ["v0"]],
+    ["uno:7", "lcd1:RS", "green", ["v0"]],
+    ["uno:6", "lcd1:E", "green", ["v0"]],
+    ["uno:5", "lcd1:D4", "green", ["v0"]],
+    ["uno:4", "lcd1:D5", "green", ["v0"]],
+    ["uno:3", "lcd1:D6", "green", ["v0"]],
+    ["uno:13", "lcd1:D7", "green", ["v0"]],
+    ["uno:GND.2", "lcd1:VO", "black", ["v0"]],
+    ["uno:5V", "lcd1:A", "red", ["v0"]],
+    ["uno:GND.2", "lcd1:K", "black", ["v0"]],
+
+    ["uno:12", "indicatorRes:1", "orange", ["v0"]],
+    ["indicatorRes:2", "indicatorLed:A", "orange", ["v0"]],
+    ["indicatorLed:C", "uno:GND.3", "black", ["v0"]],
+
+    ["uno:10", "motorRes:1", "yellow", ["v0"]],
+    ["motorRes:2", "motorLed:A", "yellow", ["v0"]],
+    ["motorLed:C", "uno:GND.4", "black", ["v0"]],
+
+    ["uno:2", "cmdButton:1.l", "green", ["v0"]],
+    ["uno:GND.5", "cmdButton:2.r", "black", ["v0"]],
+
+    ["uno:5V", "cmdPot:VCC", "red", ["v0"]],
+    ["uno:GND.6", "cmdPot:GND", "black", ["v0"]],
+    ["uno:A0", "cmdPot:SIG", "orange", ["v0"]]
+  ],
+  "dependencies": {}
+}
