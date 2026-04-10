@@ -3,8 +3,9 @@
 
 #include <Arduino.h>
 
-constexpr uint8_t MOTOR_PWM_PIN = 10U;
-constexpr uint8_t MOTOR_DIRECTION_PIN = 11U;
+constexpr uint8_t MOTOR_ENABLE_PIN = 10U;
+constexpr uint8_t MOTOR_IN1_PIN = 8U;
+constexpr uint8_t MOTOR_IN2_PIN = 9U;
 
 void motorDriverInit();
 void motorDriverSetSpeedPercent(uint8_t percent);

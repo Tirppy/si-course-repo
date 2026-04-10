@@ -1,6 +1,7 @@
 #include "tasks/task_actuator.h"
 
 #include <Arduino.h>
+#include <math.h>
 
 #include "app/app_state.h"
 #include "drivers/indicator_led.h"
@@ -26,7 +27,8 @@ void taskActuatorRun() {
         static_cast<uint16_t>(g_appState.binary.lastActuatorAtMs - g_appState.binary.lastCommandAtMs));
   }
 
-  const uint8_t requestedPercent = g_appState.analog.pwmValue;
+  const uint8_t requestedPercent =
+      static_cast<uint8_t>(lroundf(g_appState.analog.conditionedPercent));
   if (requestedPercent != motorDriverGetSpeedPercent()) {
     motorDriverSetSpeedPercent(requestedPercent);
     g_appState.analog.appliedPercent = g_appState.analog.conditionedPercent;

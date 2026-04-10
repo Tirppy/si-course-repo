@@ -51,6 +51,13 @@
       "attrs": { "value": "220" }
     },
     {
+      "type": "wokwi-l293d",
+      "id": "motorDriver",
+      "top": 8,
+      "left": 354,
+      "attrs": { "label": "L293D" }
+    },
+    {
       "type": "wokwi-pushbutton",
       "id": "cmdButton",
       "top": 54,
@@ -83,7 +90,14 @@
     ["indicatorRes:2", "indicatorLed:A", "orange", ["v0"]],
     ["indicatorLed:C", "uno:GND.3", "black", ["v0"]],
 
-    ["uno:10", "motorRes:1", "yellow", ["v0"]],
+    ["uno:10", "motorDriver:EN1,2", "yellow", ["v0"]],
+    ["uno:8", "motorDriver:IN1", "blue", ["v0"]],
+    ["uno:9", "motorDriver:IN2", "blue", ["v0"]],
+    ["uno:5V", "motorDriver:VCC1", "red", ["v0"]],
+    ["uno:5V", "motorDriver:VCC2", "red", ["v0"]],
+    ["uno:GND.4", "motorDriver:GND.1", "black", ["v0"]],
+    ["uno:GND.4", "motorDriver:GND.2", "black", ["v0"]],
+    ["motorDriver:OUT1", "motorRes:1", "yellow", ["v0"]],
     ["motorRes:2", "motorLed:A", "yellow", ["v0"]],
     ["motorLed:C", "uno:GND.4", "black", ["v0"]],
 

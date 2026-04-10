@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "app/app_state.h"
+#include "drivers/hardware_inputs.h"
 #include "services/analog_conditioning.h"
 #include "services/binary_conditioning.h"
 #include "services/command_parser.h"
@@ -25,8 +26,9 @@ void printHelp() {
   printf_P(PSTR("Commands:\n"));
   printf_P(PSTR(" ON | OFF\n"));
   printf_P(PSTR(" SET_LED ON|OFF\n"));
-  printf_P(PSTR(" SET_STEPPER <0..100>  (0=stop, >0=rotation speed)\n"));
-  printf_P(PSTR(" STEPPER_UP | STEPPER_DOWN | STEPPER_STOP\n"));
+  printf_P(PSTR(" SET_MOTOR <0..100>  (0=stop, >0=rotation speed)\n"));
+  printf_P(PSTR(" MOTOR_UP | MOTOR_DOWN | MOTOR_STOP\n"));
+  printf_P(PSTR(" (Legacy aliases: SET_STEPPER, STEPPER_UP/DOWN/STOP)\n"));
   printf_P(PSTR(" STATUS | REPORT\n"));
   printf_P(PSTR(" INPUT SERIAL|HARDWARE|HYBRID\n"));
   printf_P(PSTR(" DEBOUNCE <20..500>\n"));
@@ -45,17 +47,6 @@ void handleParsedCommand(const ParsedCommand &parsed, const char *commandText) {
   const unsigned long nowMs = millis();
   storeLastCommand(commandText);
 
-  if (g_appState.inputMode == INPUT_MODE_HARDWARE &&
-      (parsed.type == PARSED_COMMAND_SET_BINARY_STATE ||
-       parsed.type == PARSED_COMMAND_SET_ANALOG_LEVEL ||
-       parsed.type == PARSED_COMMAND_ANALOG_UP ||
-       parsed.type == PARSED_COMMAND_ANALOG_DOWN ||
-       parsed.type == PARSED_COMMAND_ANALOG_STOP)) {
-    ++g_appState.rejectedCommandCount;
-    printf_P(PSTR("ERR stepper control is hardware-driven in INPUT HARDWARE mode\n"));
-    return;
-  }
-
   switch (parsed.type) {
     case PARSED_COMMAND_SET_BINARY_STATE:
       binaryConditioningSetRawState(parsed.binaryState, nowMs);
@@ -66,30 +57,38 @@ void handleParsedCommand(const ParsedCommand &parsed, const char *commandText) {
 
     case PARSED_COMMAND_SET_ANALOG_LEVEL:
       analogConditioningSetRawPercent(parsed.analogPercent, nowMs);
+      g_appState.analog.serialPriorityActive = true;
+      g_appState.analog.serialPriorityPotReference = hardwareInputsReadPotPercent();
       ++g_appState.acceptedCommandCount;
       runtimeTelemetryLog(RUNTIME_EVENT_ANALOG_CMD, static_cast<int16_t>(parsed.analogPercent), nowMs);
-      printf_P(PSTR("ACK stepper request %d%% accepted\n"), static_cast<int>(parsed.analogPercent));
+      printf_P(PSTR("ACK motor request %d%% accepted\n"), static_cast<int>(parsed.analogPercent));
       break;
 
     case PARSED_COMMAND_ANALOG_UP:
       analogConditioningSetRawPercent(g_appState.analog.rawPercent + ANALOG_STEP_PERCENT, nowMs);
+      g_appState.analog.serialPriorityActive = true;
+      g_appState.analog.serialPriorityPotReference = hardwareInputsReadPotPercent();
       ++g_appState.acceptedCommandCount;
       runtimeTelemetryLog(RUNTIME_EVENT_ANALOG_CMD, static_cast<int16_t>(g_appState.analog.rawPercent), nowMs);
-      printf_P(PSTR("ACK stepper step up\n"));
+      printf_P(PSTR("ACK motor step up\n"));
       break;
 
     case PARSED_COMMAND_ANALOG_DOWN:
       analogConditioningSetRawPercent(g_appState.analog.rawPercent - ANALOG_STEP_PERCENT, nowMs);
+      g_appState.analog.serialPriorityActive = true;
+      g_appState.analog.serialPriorityPotReference = hardwareInputsReadPotPercent();
       ++g_appState.acceptedCommandCount;
       runtimeTelemetryLog(RUNTIME_EVENT_ANALOG_CMD, static_cast<int16_t>(g_appState.analog.rawPercent), nowMs);
-      printf_P(PSTR("ACK stepper step down\n"));
+      printf_P(PSTR("ACK motor step down\n"));
       break;
 
     case PARSED_COMMAND_ANALOG_STOP:
       analogConditioningSetRawPercent(0.0F, nowMs);
+      g_appState.analog.serialPriorityActive = true;
+      g_appState.analog.serialPriorityPotReference = hardwareInputsReadPotPercent();
       ++g_appState.acceptedCommandCount;
       runtimeTelemetryLog(RUNTIME_EVENT_ANALOG_CMD, 0, nowMs);
-      printf_P(PSTR("ACK stepper stop\n"));
+      printf_P(PSTR("ACK motor stop\n"));
       break;
 
     case PARSED_COMMAND_STATUS:

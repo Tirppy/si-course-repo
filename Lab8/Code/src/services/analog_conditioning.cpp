@@ -99,8 +99,10 @@ void analogConditioningInit() {
   g_appState.analog.conditionedPercent = 0.0F;
   g_appState.analog.appliedPercent = 0.0F;
   g_appState.analog.pwmValue = 0U;
+  g_appState.analog.serialPriorityPotReference = 0U;
   g_appState.analog.saturationAlert = false;
   g_appState.analog.limitAlert = true;
+  g_appState.analog.serialPriorityActive = false;
   g_appState.analog.lastCommandAtMs = millis();
   g_appState.analog.lastActuatorAtMs = 0U;
 

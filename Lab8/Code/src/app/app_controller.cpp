@@ -45,7 +45,7 @@ ScheduledTask g_tasks[] = {
 
 AppRuntimeState g_appState = {
     {false, false, false, false, false, false, DEFAULT_BINARY_DEBOUNCE_MS, DEFAULT_BINARY_PERSIST_SAMPLES, 0U, 0U, 0U},
-    {0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0U, false, true, 0U, 0U},
+    {0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0U, 0U, false, true, false, 0U, 0U},
     {false, false},
     0U,
     0U,

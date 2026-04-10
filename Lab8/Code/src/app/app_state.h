@@ -31,8 +31,10 @@ struct AnalogActuatorState {
   float conditionedPercent;
   float appliedPercent;
   uint8_t pwmValue;
+  uint8_t serialPriorityPotReference;
   bool saturationAlert;
   bool limitAlert;
+  bool serialPriorityActive;
   unsigned long lastCommandAtMs;
   unsigned long lastActuatorAtMs;
 };
