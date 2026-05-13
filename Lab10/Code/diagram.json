@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "author": "OpenCode",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "wokwi-arduino-uno",
+      "id": "uno",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "thermistorSim",
+      "top": -130,
+      "left": -180,
+      "attrs": { "value": "450" }
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "setPot",
+      "top": 170,
+      "left": -180,
+      "attrs": { "value": "512" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "heaterLed",
+      "top": -70,
+      "left": 290,
+      "attrs": { "color": "red" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "fanLed",
+      "top": 10,
+      "left": 470,
+      "attrs": { "color": "green" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "fanRes",
+      "top": 14,
+      "left": 424,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-l293d",
+      "id": "motorDriver",
+      "top": 12,
+      "left": 340,
+      "attrs": { "label": "L293D" }
+    },
+    {
+      "type": "wokwi-lcd1602",
+      "id": "lcd",
+      "top": 240,
+      "left": 80,
+      "attrs": {}
+    }
+  ],
+  "connections": [
+    ["thermistorSim:VCC", "uno:5V", "red", ["v0"]],
+    ["thermistorSim:GND", "uno:GND.1", "black", ["v0"]],
+    ["thermistorSim:SIG", "uno:A0", "green", ["v0"]],
+
+    ["setPot:VCC", "uno:5V", "red", ["v0"]],
+    ["setPot:GND", "uno:GND.2", "black", ["v0"]],
+    ["setPot:SIG", "uno:A1", "green", ["v0"]],
+
+    ["uno:8", "heaterLed:A", "orange", ["v0"]],
+    ["heaterLed:C", "uno:GND.2", "black", ["v0"]],
+
+    ["uno:5V", "motorDriver:VCC1", "red", ["v0"]],
+    ["uno:5V", "motorDriver:VCC2", "red", ["v0"]],
+    ["uno:5V", "motorDriver:EN1,2", "red", ["v0"]],
+    ["uno:GND.4", "motorDriver:GND.1", "black", ["v0"]],
+    ["uno:GND.4", "motorDriver:GND.2", "black", ["v0"]],
+    ["uno:2", "motorDriver:IN1", "blue", ["v0"]],
+    ["uno:10", "motorDriver:IN2", "blue", ["v0"]],
+    ["motorDriver:OUT2", "fanRes:1", "yellow", ["v0"]],
+    ["fanRes:2", "fanLed:A", "yellow", ["v0"]],
+    ["fanLed:C", "uno:GND.4", "black", ["v0"]],
+
+    ["uno:7", "lcd:RS", "purple", ["v0"]],
+    ["uno:6", "lcd:E", "purple", ["v0"]],
+    ["uno:5", "lcd:D4", "green", ["v0"]],
+    ["uno:4", "lcd:D5", "green", ["v0"]],
+    ["uno:3", "lcd:D6", "green", ["v0"]],
+    ["uno:13", "lcd:D7", "green", ["v0"]],
+    ["uno:5V", "lcd:VCC", "red", ["v0"]],
+    ["uno:GND.3", "lcd:GND", "black", ["v0"]],
+    ["lcd:RW", "uno:GND.3", "black", ["v0"]]
+  ]
+}
